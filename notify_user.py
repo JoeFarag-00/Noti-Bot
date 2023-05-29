@@ -18,9 +18,8 @@ intents.members = True
 
 
 Members = {
-    "Youssef": {"username": "34234", "password": "1235", "id":"LEGENDARY_RAGE00#8408"},
-    "hwllo": {"username": "34433", "password": "@34234", "id":"wewefwef#qdwq"},
-    
+    "member1": {"username": "211777", "password": "Y4354543", "id":"324242342424556"},
+  
 }
 
 ErrorList = []
@@ -63,69 +62,69 @@ for member, credentials in Members.items():
 print("Pass", PassedList)
 print("Error", ErrorList)
 
-while True:
+bot = commands.Bot(command_prefix="!", intents=intents) 
 
-    def scrape_courses(driver):
-        try:
-            course_elements = driver.find_elements("xpath", "//a[starts-with(@id, 'label_3_')]")
-            courses = {}
-            for element in course_elements:
-                course_id = element.get_attribute("id")
-                course_name = element.text
-                course_link = element.get_attribute("href")
-                courses[course_id] = {"name": course_name, "link": course_link}
-            return courses
-        except:
-            pass
+@bot.event
+async def on_ready():
+    print('Logged in as {0.user}'.format(bot))
+    while True:
 
-    def scrape_course_contents(driver, course_link):
-        try: 
-            driver.get(course_link)
-            content_elements = driver.find_elements("class name", "instancename")
-            contents = []
-            for element in content_elements:
-                content_name = element.text
-                contents.append(content_name)
-            return contents
-        except:
-            pass   
+        def scrape_courses(driver):
+            try:
+                course_elements = driver.find_elements("xpath", "//a[starts-with(@id, 'label_3_')]")
+                courses = {}
+                for element in course_elements:
+                    course_id = element.get_attribute("id")
+                    course_name = element.text
+                    course_link = element.get_attribute("href")
+                    courses[course_id] = {"name": course_name, "link": course_link}
+                return courses
+            except:
+                pass
 
-    def save_contents_to_file(member, course_name, contents):
-        directory = f"Archives/{member}"
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-
-        filename = f"{directory}/{member}_{course_name}.txt"
-        with open(filename, "w") as file:
-            for content in contents:
-                file.write(content + "\n")
-
-    def check_for_new_contents(member, course_name, contents):
-        try:
-            directory = f"Archives/{member}"
-            filename = f"{directory}/{member}_{course_name}.txt"
-            if not os.path.exists(filename):
-                save_contents_to_file(member, course_name, contents)
+        def scrape_course_contents(driver, course_link):
+            try: 
+                driver.get(course_link)
+                content_elements = driver.find_elements("class name", "instancename")
+                contents = []
+                for element in content_elements:
+                    content_name = element.text
+                    contents.append(content_name)
                 return contents
+            except:
+                pass   
 
-            with open(filename, "r") as file:
-                stored_contents = [line.strip() for line in file]
+        def save_contents_to_file(member, course_name, contents):
+            directory = f"Archives/{member}"
+            if not os.path.exists(directory):
+                os.makedirs(directory)
 
-            new_contents = [content for content in contents if content not in stored_contents]
+            filename = f"{directory}/{member}_{course_name}.txt"
+            with open(filename, "w") as file:
+                for content in contents:
+                    file.write(content + "\n")
 
-            if new_contents:
-                save_contents_to_file(member, course_name, contents)
-                return new_contents
+        def check_for_new_contents(member, course_name, contents):
+            try:
+                directory = f"Archives/{member}"
+                filename = f"{directory}/{member}_{course_name}.txt"
+                if not os.path.exists(filename):
+                    save_contents_to_file(member, course_name, contents)
+                    return contents
 
-            return []
-        except:
-            pass
-        
-    bot = commands.Bot(command_prefix="!", intents=intents)
-    bot.run("TOKEN") 
-    
-    @bot.event
-    async def on_ready():
+                with open(filename, "r") as file:
+                    stored_contents = [line.strip() for line in file]
+
+                new_contents = [content for content in contents if content not in stored_contents]
+
+                if new_contents:
+                    save_contents_to_file(member, course_name, contents)
+                    return new_contents
+
+                return []
+            except:
+                pass
+            
         for member, driver in drivers.items():
             try:
                 if member in PassedList:
@@ -143,13 +142,21 @@ while True:
                             new_assignments.extend([f"{course_name}: {content}" for content in new_contents])
 
                     if new_assignments:
-                        user_id = Members[member]["id"]
-                        user = bot.fetch_user(user_id)
-                        message = f"New addition in your courses:\n" + "\n".join(new_assignments)
-                        await user.send(message)
-                        print(f"New addition for {member}: {new_assignments}")
+                        # #for DMs
+                        # user_id = Members[member]["id"]
+                        # user = await bot.fetch_user(user_id)
+                        # dm_channel = await user.create_dm()
+                        # message = f"New addition in your courses:\n" + "\n".join(new_assignments)
+                        # await dm_channel.send(message)
+                        #For channel
+                        channel = bot.get_channel(1080632622188875900)
+                        await channel.send(f"New course additions for {member}:\n {new_assignments}")
+                        
+                        print(f"New course additions for {member}: {new_assignments}")
                         
                     print("DONE: ",member)
             except:
-                pass
-                
+                print("Error In Parse")
+
+
+bot.run("token")
