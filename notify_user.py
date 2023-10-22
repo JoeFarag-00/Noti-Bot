@@ -3,11 +3,22 @@ from discord.ext import commands
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service as ChromeService
 import time
 import os
+# import chromedriver_autoinstaller
+# chromedriver_autoinstaller.install()
+
+chromedriver_path = 'chromedriver.exe'
+chrome_service = ChromeService(executable_path=chromedriver_path)
+
 
 chrome_options = Options()
+driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
 chrome_options.add_argument("--headless")
+# chrome_options.add_argument("--window-size=1000,1080")
+
+
 intents = discord.Intents.default()
 intents.message_content = True
 intents.typing = False
@@ -16,12 +27,10 @@ intents.messages = True
 intents.guilds = True
 intents.members = True
 
-
 Members = {
     "member1": {"username": "211777", "password": "Y4354543", "id":"324242342424556"},
   
 }
-
 ErrorList = []
 PassedList = []
 AllList = []
@@ -29,6 +38,7 @@ link = "https://e-learning.msa.edu.eg/login/index.php"
 
 drivers = {}
 
+#Login for each members
 for member, credentials in Members.items():
     try:
         driver = webdriver.Chrome(options=chrome_options)
@@ -45,7 +55,7 @@ for member, credentials in Members.items():
         password_field = driver.find_element("name", 'password')
         username_field.send_keys(username)
         password_field.send_keys(password)
-        login_button = driver.find_element("xpath", "//input[@value='Log in']")
+        login_button = driver.find_element("id", "loginbtn")
         login_button.click()
 
         drivers[member] = driver
@@ -55,9 +65,9 @@ for member, credentials in Members.items():
             PassedList.append(member)
         else:
             ErrorList.append(member)
-            # driver.close()
-    except:
-        pass
+    except Exception as e:
+        ErrorList.append(member)
+        print(f"Error logging in for {member}: {str(e)}")
 
 print("Pass", PassedList)
 print("Error", ErrorList)
@@ -71,15 +81,19 @@ async def on_ready():
 
         def scrape_courses(driver):
             try:
-                course_elements = driver.find_elements("xpath", "//a[starts-with(@id, 'label_3_')]")
+                driver.get("https://e-learning.msa.edu.eg/my/courses.php")
+                course_elements = driver.find_elements("xpath", "//ul[@class='block_tree list']//li[contains(@class, 'type_course')]//a")
                 courses = {}
+
                 for element in course_elements:
-                    course_id = element.get_attribute("id")
-                    course_name = element.text
+                    course_id = element.get_attribute("href").split("id=")[-1]
+                    course_name = element.get_attribute("title")
                     course_link = element.get_attribute("href")
                     courses[course_id] = {"name": course_name, "link": course_link}
+
                 return courses
             except:
+                print("ERROR")
                 pass
 
         def scrape_course_contents(driver, course_link):
@@ -95,7 +109,7 @@ async def on_ready():
                 pass   
 
         def save_contents_to_file(member, course_name, contents):
-            directory = f"Archives/{member}"
+            directory = f"Members/{member}"
             if not os.path.exists(directory):
                 os.makedirs(directory)
 
@@ -106,7 +120,7 @@ async def on_ready():
 
         def check_for_new_contents(member, course_name, contents):
             try:
-                directory = f"Archives/{member}"
+                directory = f"Members/{member}"
                 filename = f"{directory}/{member}_{course_name}.txt"
                 if not os.path.exists(filename):
                     save_contents_to_file(member, course_name, contents)
@@ -142,7 +156,7 @@ async def on_ready():
                             new_assignments.extend([f"{course_name}: {content}" for content in new_contents])
 
                     if new_assignments:
-                        # #for DMs
+                        # for DMs
                         # user_id = Members[member]["id"]
                         # user = await bot.fetch_user(user_id)
                         # dm_channel = await user.create_dm()
@@ -151,6 +165,7 @@ async def on_ready():
                         #For channel
                         channel = bot.get_channel(1080632622188875900)
                         await channel.send(f"New course additions for {member}:\n {new_assignments}")
+                        await channel.send(f"\n")
                         
                         print(f"New course additions for {member}: {new_assignments}")
                         
@@ -159,4 +174,4 @@ async def on_ready():
                 print("Error In Parse")
 
 
-bot.run("token")
+bot.run("Use your API key")
